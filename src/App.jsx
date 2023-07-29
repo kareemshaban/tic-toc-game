@@ -1,41 +1,72 @@
 import Board from './components/Board';
 import './styles.scss';
 import { useState } from 'react';
+import StatusMessage from './components/StatusMessage';
 import { calculateResult } from './result';
-
+import Gamehistory from './components/GameHistory';
+import ResetBtn from './components/ResetBtn';
 function App() {
-  const [squares, setSquares] = useState(Array(9).fill(null));
-  const [isXNext, setIsXNext] = useState(false);
+  const NEW_GAME = [{ squares: Array(9).fill(null), isXNext: false }];
+  const [history, setHistory] = useState(NEW_GAME);
+  const [currentMove, setCurrentMove] = useState(0);
 
-  const winner = calculateResult(squares);
-  console.log(winner);
-  const player = isXNext ? 'X' : 'O';
-  const msg = winner
-    ? `Winner is ${winner}`
-    : squares.filter(c => c == null).length > 0
-    ? `next Player is ${player}`
-    : 'Draw :(';
+  const gamingBoard = history[currentMove];
+
+  const { winner, winningSquares } = calculateResult(gamingBoard.squares);
   function handleSquareClick(clickedPosition) {
-    if (squares[clickedPosition] == null && winner == null) {
-      setSquares(currentSquares => {
-        return currentSquares.map((val, position) => {
+    if (gamingBoard.squares[clickedPosition] == null && winner == null) {
+      setHistory(currentHistory => {
+        let isBacktoHistory = currentMove + 1 !== history.length; //false normal behaviour , true history behaviour
+        console.log(isBacktoHistory);
+        let lastGamingBoard = isBacktoHistory
+          ? currentHistory[currentMove]
+          : history[history.length - 1];
+
+        let nextGamingBoard = lastGamingBoard.squares.map((val, position) => {
           if (clickedPosition === position) {
-            val = isXNext ? 'X' : 'O';
+            val = lastGamingBoard.isXNext ? 'X' : 'O';
           }
           return val;
         });
+
+        let base = isBacktoHistory
+          ? currentHistory.slice(0, currentMove + 1)
+          : currentHistory;
+        return base.concat({
+          squares: nextGamingBoard,
+          isXNext: !lastGamingBoard.isXNext,
+        });
       });
 
-      setIsXNext(currentIsXNext => {
-        return !currentIsXNext;
-      });
+      setCurrentMove(lastMove => lastMove + 1);
     }
+  }
+  function moveTo(move) {
+    setCurrentMove(move);
+  }
+
+  function reset() {
+    setHistory(NEW_GAME);
+    setCurrentMove(0);
   }
 
   return (
     <div className="app">
-      <h2>{msg}</h2>
-      <Board handleSquareClick={handleSquareClick} squares={squares} />
+      <StatusMessage gamingBoard={gamingBoard} winner={winner} />
+      <Board
+        handleSquareClick={handleSquareClick}
+        squares={gamingBoard.squares}
+        winningSquares={winningSquares}
+      />
+      <button className={`btn-reset ${winner ? 'active' : ''}`} onClick={reset}>
+        Reset Game
+      </button>
+      <h2>Curren Game History</h2>
+      <Gamehistory
+        history={history}
+        moveTo={moveTo}
+        currentMove={currentMove}
+      />
     </div>
   );
 }

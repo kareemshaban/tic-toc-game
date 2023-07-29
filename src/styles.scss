@@ -62,6 +62,8 @@ button {
 
       .btn-move {
         color: #fff;
+        background: transparent;
+
         &.active {
           font-weight: bold;
           color: $green;
